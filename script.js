@@ -65,8 +65,11 @@ startButton.addEventListener('click', () => {
     startButton.disabled = true;
     startButton.textContent = 'On Cooldown';
     
-    // Set countdown for 24 hours from now
-    endTime = Date.now() + (37.5 * 60 * 60 * 1000);
+    // Set countdown for random time between 24 and 48 hours
+    const minHours = 24;
+    const maxHours = 48;
+    const randomHours = Math.random() * (maxHours - minHours) + minHours;
+    endTime = Date.now() + (randomHours * 60 * 60 * 1000);
     localStorage.setItem('countdownEndTime', endTime.toString());
     
     // Update the server with the endTime
