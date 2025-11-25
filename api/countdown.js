@@ -1,14 +1,27 @@
-// Serverless function to handle countdown state
-// Using Vercel KV or simple in-memory storage would be better for production
-// This uses a simple file-based approach via Vercel's temporary storage
+// Simple serverless function with file-based persistence
+import { promises as fs } from 'fs';
+import path from 'path';
 
-let countdownState = {
-  endTime: null,
-  isActive: false,
-  lastUpdated: null
-};
+const DATA_FILE = '/tmp/countdown-state.json';
 
-export default function handler(req, res) {
+async function readState() {
+  try {
+    const data = await fs.readFile(DATA_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return { endTime: null, isActive: false };
+  }
+}
+
+async function writeState(state) {
+  try {
+    await fs.writeFile(DATA_FILE, JSON.stringify(state), 'utf8');
+  } catch (error) {
+    console.error('Error writing state:', error);
+  }
+}
+
+export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -19,14 +32,14 @@ export default function handler(req, res) {
   }
 
   if (req.method === 'GET') {
-    // Return current countdown state
+    const state = await readState();
     const now = Date.now();
     
-    if (countdownState.endTime && countdownState.endTime > now) {
+    if (state.endTime && state.endTime > now) {
       return res.status(200).json({
-        endTime: countdownState.endTime,
+        endTime: state.endTime,
         isActive: true,
-        timeRemaining: countdownState.endTime - now
+        timeRemaining: state.endTime - now
       });
     } else {
       return res.status(200).json({
@@ -38,20 +51,20 @@ export default function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    // Start a new countdown
-    const { action } = req.body;
+    const { action, endTime } = req.body;
     
-    if (action === 'start') {
-      const endTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
-      countdownState = {
-        endTime,
+    if (action === 'start' && endTime) {
+      const state = {
+        endTime: endTime,
         isActive: true,
         lastUpdated: Date.now()
       };
       
+      await writeState(state);
+      
       return res.status(200).json({
         success: true,
-        endTime: countdownState.endTime
+        endTime: state.endTime
       });
     }
 
