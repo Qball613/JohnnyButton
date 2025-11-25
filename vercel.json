@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/view", "destination": "/view.html" },
+    { "source": "/api/countdown", "destination": "/api/countdown.js" }
   ]
 }

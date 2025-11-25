@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Johnny's Cooldown - View</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .time-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time-value {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #667eea;
+            background: #f0f0f0;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            min-width: 120px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .time-label {
+            margin-top: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .message {
+            margin-top: 2rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            min-height: 2rem;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        .status.active {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .status.ready {
+            background: #51cf66;
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 2rem 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .countdown {
+                gap: 1rem;
+            }
+
+            .time-value {
+                font-size: 2.5rem;
+                padding: 0.75rem 1rem;
+                min-width: 80px;
+            }
+
+            .time-label {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Johnny's F slur button</h1>
+        <p class="subtitle">Public Countdown View</p>
+        <div id="countdown" class="countdown">
+            <div class="time-unit">
+                <span id="hours" class="time-value">00</span>
+                <span class="time-label">Hours</span>
+            </div>
+            <div class="time-unit">
+                <span id="minutes" class="time-value">00</span>
+                <span class="time-label">Minutes</span>
+            </div>
+            <div class="time-unit">
+                <span id="seconds" class="time-value">00</span>
+                <span class="time-label">Seconds</span>
+            </div>
+        </div>
+        <div id="message" class="message"></div>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const hoursElement = document.getElementById('hours');
+        const minutesElement = document.getElementById('minutes');
+        const secondsElement = document.getElementById('seconds');
+        const messageElement = document.getElementById('message');
+        const statusElement = document.getElementById('status');
+
+        let updateInterval;
+
+        function displayTime(hours, minutes, seconds) {
+            hoursElement.textContent = String(hours).padStart(2, '0');
+            minutesElement.textContent = String(minutes).padStart(2, '0');
+            secondsElement.textContent = String(seconds).padStart(2, '0');
+        }
+
+        function updateCountdown() {
+            fetch('/api/countdown')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.isActive && data.timeRemaining > 0) {
+                        const timeRemaining = data.timeRemaining;
+                        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                        
+                        displayTime(hours, minutes, seconds);
+                        messageElement.textContent = 'Cooldown Active';
+                        statusElement.textContent = '🔴 On Cooldown';
+                        statusElement.className = 'status active';
+                    } else {
+                        displayTime(0, 0, 0);
+                        messageElement.textContent = 'Ready! ⚡';
+                        statusElement.textContent = '✅ Ready';
+                        statusElement.className = 'status ready';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching countdown:', error);
+                    messageElement.textContent = 'Error loading countdown';
+                });
+        }
+
+        // Update immediately
+        updateCountdown();
+
+        // Update every second
+        updateInterval = setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>

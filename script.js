@@ -69,6 +69,15 @@ startButton.addEventListener('click', () => {
     endTime = Date.now() + (24 * 60 * 60 * 1000);
     localStorage.setItem('countdownEndTime', endTime.toString());
     
+    // Update the server
+    fetch('/api/countdown', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'start' })
+    }).catch(error => console.error('Error updating server:', error));
+    
     startCountdown();
 });
 
