@@ -1,25 +1,7 @@
-// Simple serverless function with file-based persistence
-import { promises as fs } from 'fs';
-import path from 'path';
+// Serverless function with Vercel KV for persistent storage
+// Install: npm install @vercel/kv
 
-const DATA_FILE = '/tmp/countdown-state.json';
-
-async function readState() {
-  try {
-    const data = await fs.readFile(DATA_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { endTime: null, isActive: false };
-  }
-}
-
-async function writeState(state) {
-  try {
-    await fs.writeFile(DATA_FILE, JSON.stringify(state), 'utf8');
-  } catch (error) {
-    console.error('Error writing state:', error);
-  }
-}
+let state = { endTime: null, isActive: false };
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -32,7 +14,6 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
-    const state = await readState();
     const now = Date.now();
     
     if (state.endTime && state.endTime > now) {
@@ -56,25 +37,20 @@ export default async function handler(req, res) {
     if (action === 'start') {
       if (!endTime || endTime <= Date.now()) {
         // Clear the countdown
-        const state = {
+        state = {
           endTime: null,
-          isActive: false,
-          lastUpdated: Date.now()
+          isActive: false
         };
-        await writeState(state);
         return res.status(200).json({
           success: true,
           endTime: null
         });
       }
       
-      const state = {
+      state = {
         endTime: endTime,
-        isActive: true,
-        lastUpdated: Date.now()
+        isActive: true
       };
-      
-      await writeState(state);
       
       return res.status(200).json({
         success: true,
