@@ -53,7 +53,21 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { action, endTime } = req.body;
     
-    if (action === 'start' && endTime) {
+    if (action === 'start') {
+      if (!endTime || endTime <= Date.now()) {
+        // Clear the countdown
+        const state = {
+          endTime: null,
+          isActive: false,
+          lastUpdated: Date.now()
+        };
+        await writeState(state);
+        return res.status(200).json({
+          success: true,
+          endTime: null
+        });
+      }
+      
       const state = {
         endTime: endTime,
         isActive: true,
