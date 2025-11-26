@@ -7,8 +7,31 @@ const secondsElement = document.getElementById('seconds');
 const startButton = document.getElementById('startButton');
 const messageElement = document.getElementById('message');
 
-// Load saved state from localStorage
-function loadState() {
+// Load saved state from localStorage and server
+async function loadState() {
+    // First, try to get state from server
+    try {
+        const response = await fetch('/api/countdown');
+        const serverState = await response.json();
+        
+        if (serverState.isActive && serverState.endTime) {
+            endTime = serverState.endTime;
+            localStorage.setItem('countdownEndTime', endTime.toString());
+            
+            const now = Date.now();
+            if (endTime > now) {
+                startButton.disabled = true;
+                startButton.textContent = 'On Cooldown';
+                messageElement.textContent = 'Cooldown Active';
+                startCountdown();
+                return;
+            }
+        }
+    } catch (error) {
+        console.log('Could not fetch server state, using localStorage');
+    }
+    
+    // Fall back to localStorage
     const savedEndTime = localStorage.getItem('countdownEndTime');
     if (savedEndTime) {
         endTime = parseInt(savedEndTime);
@@ -43,6 +66,19 @@ function startCountdown() {
             startButton.disabled = false;
             startButton.textContent = 'I said it again!!!';
             localStorage.removeItem('countdownEndTime');
+            
+            // Clear server state as well
+            fetch('/api/countdown', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    action: 'start',
+                    endTime: 0
+                })
+            }).catch(error => console.error('Error clearing server:', error));
+            
             return;
         }
 
